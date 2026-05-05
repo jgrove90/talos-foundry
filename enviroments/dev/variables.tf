@@ -93,3 +93,9 @@ variable "tailscale_router_hostname" {
   type        = string
   default     = "talos-dev-tailscale-router"
 }
+
+variable "talos_version" {
+  description = "Talos version contract used by the Talos provider for bootstrap config generation."
+  type        = string
+  default     = "v1.12"
+}

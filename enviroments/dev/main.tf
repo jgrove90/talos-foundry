@@ -61,6 +61,17 @@ module "talos-cp" {
   tags                        = var.common_tags
 }
 
+module "talos-bootstrap" {
+  source = "../../modules/talos-bootstrap"
+
+  cluster_name        = var.cluster_name
+  control_plane_nodes = module.talos-cp.control_plane_private_ips
+  talos_version       = var.talos_version
+  config_output_dir   = "${path.module}/credentials"
+
+  depends_on = [module.talos-cp]
+}
+
 module "tailscale-vpn-router" {
   source = "../../modules/vpn-tailscale"
 
