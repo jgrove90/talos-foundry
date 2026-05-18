@@ -4,6 +4,7 @@ resource "aws_instance" "control_plane" {
   ami           = var.ami_id
   instance_type = var.control_plane_instance_type
   subnet_id     = local.control_plane_subnets[count.index]
+  private_ip    = length(var.control_plane_private_ips) > 0 ? var.control_plane_private_ips[count.index] : null
 
   vpc_security_group_ids      = local.security_group_ids
   iam_instance_profile        = var.iam_instance_profile_name

@@ -25,6 +25,17 @@ variable "control_plane_count" {
   default     = 1
 }
 
+variable "control_plane_private_ips" {
+  description = "Optional static private IPv4 addresses for control plane instances. Must match control_plane_count when provided."
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition     = length(var.control_plane_private_ips) == 0 || length(var.control_plane_private_ips) == var.control_plane_count
+    error_message = "control_plane_private_ips must be empty or contain exactly control_plane_count IPs."
+  }
+}
+
 variable "control_plane_instance_type" {
   description = "EC2 instance type for control plane nodes."
   type        = string

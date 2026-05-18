@@ -9,32 +9,15 @@ terraform {
   }
 }
 
-locals {
-  control_plane_nodes = sort(var.control_plane_nodes)
-  bootstrap_node      = local.control_plane_nodes[0]
-  cluster_endpoint    = var.cluster_endpoint != "" ? var.cluster_endpoint : "https://${local.bootstrap_node}:6443"
-}
-
 resource "talos_machine_secrets" "this" {
   talos_version = var.talos_version
 }
 
-data "talos_machine_configuration" "controlplane" {
-  cluster_name     = var.cluster_name
-  machine_type     = "controlplane"
-  cluster_endpoint = local.cluster_endpoint
-  machine_secrets  = talos_machine_secrets.this.machine_secrets
-  talos_version    = var.talos_version
-  config_patches   = var.controlplane_config_patches
-}
-
-resource "talos_machine_configuration_apply" "controlplane" {
-  count = length(local.control_plane_nodes)
-
+resource "talos_machine_configuration_apply" "controlplane_bootstrap" {
   client_configuration        = talos_machine_secrets.this.client_configuration
   machine_configuration_input = data.talos_machine_configuration.controlplane.machine_configuration
-  node                        = local.control_plane_nodes[count.index]
-  endpoint                    = local.control_plane_nodes[count.index]
+  node                        = local.bootstrap_node
+  endpoint                    = local.bootstrap_node
   apply_mode                  = var.apply_mode
 }
 
@@ -43,7 +26,19 @@ resource "talos_machine_bootstrap" "this" {
   endpoint             = local.bootstrap_node
   client_configuration = talos_machine_secrets.this.client_configuration
 
-  depends_on = [talos_machine_configuration_apply.controlplane]
+  depends_on = [talos_machine_configuration_apply.controlplane_bootstrap]
+}
+
+resource "talos_machine_configuration_apply" "controlplane_followers" {
+  count = max(length(local.control_plane_nodes) - 1, 0)
+
+  client_configuration        = talos_machine_secrets.this.client_configuration
+  machine_configuration_input = data.talos_machine_configuration.controlplane.machine_configuration
+  node                        = local.control_plane_nodes[count.index + 1]
+  endpoint                    = local.control_plane_nodes[count.index + 1]
+  apply_mode                  = var.apply_mode
+
+  depends_on = [talos_machine_bootstrap.this]
 }
 
 resource "talos_cluster_kubeconfig" "this" {
@@ -51,14 +46,7 @@ resource "talos_cluster_kubeconfig" "this" {
   endpoint             = local.bootstrap_node
   client_configuration = talos_machine_secrets.this.client_configuration
 
-  depends_on = [talos_machine_bootstrap.this]
-}
-
-data "talos_client_configuration" "this" {
-  cluster_name         = var.cluster_name
-  client_configuration = talos_machine_secrets.this.client_configuration
-  nodes                = local.control_plane_nodes
-  endpoints            = [local.bootstrap_node]
+  depends_on = [talos_machine_configuration_apply.controlplane_followers]
 }
 
 resource "local_sensitive_file" "talosconfig" {

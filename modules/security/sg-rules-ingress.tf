@@ -99,6 +99,26 @@ resource "aws_security_group_rule" "tailscale_to_control_plane" {
   cidr_blocks       = var.tailscale_allowed_cidrs
 }
 
+resource "aws_security_group_rule" "tailscale_router_to_kube_api" {
+  description              = "Allow Tailscale subnet router to reach Kubernetes API"
+  type                     = "ingress"
+  from_port                = 6443
+  to_port                  = 6443
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.control_plane.id
+  source_security_group_id = aws_security_group.tailscale_router.id
+}
+
+resource "aws_security_group_rule" "tailscale_router_to_talos_api" {
+  description              = "Allow Tailscale subnet router to reach Talos API"
+  type                     = "ingress"
+  from_port                = 50000
+  to_port                  = 50000
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.control_plane.id
+  source_security_group_id = aws_security_group.tailscale_router.id
+}
+
 resource "aws_security_group_rule" "tailscale_to_worker" {
   description       = "Allow Tailscale subnet router traffic to worker nodes"
   type              = "ingress"

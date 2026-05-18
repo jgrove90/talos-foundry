@@ -1,7 +1,8 @@
-# Dev Environment Configuration
-# This environment uses single-AZ deployment for cost efficiency
+# Production Environment Configuration
+# This environment uses multi-AZ HA deployment with NAT gateway
 
-# Network Module - Single AZ for dev
+
+# Network Module - Multi-AZ HA for prod
 module "network" {
   source = "../../modules/network"
 
@@ -10,20 +11,6 @@ module "network" {
   cidr_block              = var.vpc_cidr_block
   high_availability       = local.high_availability
   create_internet_gateway = true
-}
-
-# Security Module
-module "security" {
-  source = "../../modules/security"
-
-  cluster_name              = var.cluster_name
-  vpc_id                    = module.network.vpc_id
-  vpc_cidr_block            = var.vpc_cidr_block
-  common_tags               = local.common_tags
-  talos_api_allowed_cidrs   = var.talos_api_allowed_cidrs
-  enable_ssh_from_tailscale = var.enable_ssh_from_tailscale
-  enable_strict_egress      = var.enable_strict_egress
-  additional_iam_policies   = var.additional_iam_policies
 }
 
 # NAT Gateway for private subnet internet access
@@ -43,6 +30,19 @@ module "fck-nat" {
   }
 }
 
+# Security Module
+module "security" {
+  source = "../../modules/security"
+
+  cluster_name              = var.cluster_name
+  vpc_id                    = module.network.vpc_id
+  vpc_cidr_block            = var.vpc_cidr_block
+  common_tags               = local.common_tags
+  talos_api_allowed_cidrs   = var.talos_api_allowed_cidrs
+  enable_ssh_from_tailscale = var.enable_ssh_from_tailscale
+  enable_strict_egress      = var.enable_strict_egress
+  additional_iam_policies   = var.additional_iam_policies
+}
 
 # Compute Module - Control plane only (workers managed by Karpenter)
 module "talos-cp" {
@@ -96,5 +96,4 @@ module "tailscale-vpn-router" {
     advertise_routes = var.tailscale_advertise_routes
     hostname         = var.tailscale_router_hostname
   })
-
 }

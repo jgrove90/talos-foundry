@@ -47,6 +47,7 @@ for attempt in 1 2 3 4 5; do
     --authkey "$${TAILSCALE_AUTH_KEY}" \
     --advertise-routes="$${TAILSCALE_ADVERTISE_ROUTES}" \
     --accept-routes=false \
+    --advertise-tags=tag:aws-vpc-router \
     --hostname="$${TAILSCALE_HOSTNAME}" \
     --advertise-exit-node=false; then
     exit 0

@@ -1,43 +1,28 @@
-# Dev Environment Variables
-# These override global defaults for development-specific settings
+# Production Environment Variables
+# These override global defaults for production-specific settings
 
 variable "cluster_name" {
   description = "Name of the Kubernetes cluster"
   type        = string
-  default     = "talos-dev"
+  default     = "talos-prod"
 }
 
 variable "environment" {
   description = "Deployment environment"
   type        = string
-  default     = "dev"
+  default     = "prod"
 }
 
 variable "talos_api_allowed_cidrs" {
-  description = "CIDR blocks allowed to access Talos API (open for dev)"
+  description = "CIDR blocks allowed to access Talos API (restricted for prod)"
   type        = list(string)
-  default     = ["0.0.0.0/0"]
+  default     = [] # Should be set in terraform.tfvars with specific CIDRs
 }
 
 variable "enable_strict_egress" {
   description = "Whether to restrict egress traffic"
   type        = bool
-  default     = false
-}
-
-variable "common_tags" {
-  type = map(string)
-}
-
-variable "vpc_cidr_block" {
-  type = string
-}
-
-
-variable "additional_iam_policies" {
-  description = "Additional IAM policies to attach to EC2 role"
-  type        = list(string)
-  default     = []
+  default     = true # Strict egress for prod
 }
 
 variable "compute_key_name" {
@@ -52,22 +37,45 @@ variable "control_plane_private_ips" {
   default     = []
 }
 
-variable "tailscale_auth_key" {
-  description = "Tailscale auth key used by the subnet router bootstrap script"
-  type        = string
-  sensitive   = true
+variable "common_tags" {
+  description = "Common tags applied to all resources."
+  type        = map(string)
 }
 
-variable "tailscale_advertise_routes" {
-  description = "Comma-separated CIDRs to advertise through the Tailscale router"
+variable "vpc_cidr_block" {
+  description = "CIDR block for the VPC."
   type        = string
-  default     = "10.0.0.0/16"
+}
+
+variable "additional_iam_policies" {
+  description = "Additional IAM policies to attach to EC2 role"
+  type        = list(string)
+  default     = []
+}
+
+variable "talos_version" {
+  description = "Talos version contract used by the Talos provider for bootstrap config generation."
+  type        = string
+  default     = "v1.12"
 }
 
 variable "enable_ssh_from_tailscale" {
   description = "Allow SSH to the Tailscale router from tailscale_allowed_cidrs."
   type        = bool
-  default     = true
+  default     = false
+}
+
+variable "tailscale_auth_key" {
+  description = "Tailscale auth key used by the subnet router bootstrap script."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "tailscale_advertise_routes" {
+  description = "Comma-separated CIDRs to advertise through the Tailscale router."
+  type        = string
+  default     = "10.0.0.0/16"
 }
 
 variable "tailscale_router_key_name" {
@@ -97,11 +105,5 @@ variable "tailscale_router_private_ip" {
 variable "tailscale_router_hostname" {
   description = "Hostname used by tailscale up for the subnet router node."
   type        = string
-  default     = "talos-dev-tailscale-router"
-}
-
-variable "talos_version" {
-  description = "Talos version contract used by the Talos provider for bootstrap config generation."
-  type        = string
-  default     = "v1.12"
+  default     = "talos-prod-tailscale-router"
 }
